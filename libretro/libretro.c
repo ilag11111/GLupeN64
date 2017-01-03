@@ -94,6 +94,9 @@ u32 EnableFragmentDepthWrite = 0;
 u32 EnableShadersStorage = 0;
 u32 CropMode = 0;
 
+FILE *save_ptr;
+char* save_filename;
+
 int rspMode = 0;
 // after the controller's CONTROL* member has been assigned we can update
 // them straight from here...
@@ -375,6 +378,10 @@ void retro_init(void)
     environ_cb(RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE, &rumble);
     environ_cb(RETRO_ENVIRONMENT_SET_SERIALIZATION_QUIRKS, &serialization_quirks);
     initializing = true;
+    const char* save_filename_temp = ConfigGetSharedDataFilepath("savestate.temp");
+    save_filename = malloc(strlen(save_filename_temp));
+    strncpy(save_filename, save_filename_temp, strlen(save_filename_temp));
+    save_ptr = fopen(save_filename, "w+");
 
     retro_thread = co_active();
     game_thread = co_create(65536 * sizeof(void*) * 16, EmuThreadFunction);
@@ -387,6 +394,10 @@ void retro_deinit(void)
 
     if (perf_cb.perf_log)
         perf_cb.perf_log();
+
+    fclose(save_ptr);
+    remove(save_filename);
+    free(save_filename);
 }
 
 void update_controllers()
@@ -826,13 +837,9 @@ bool retro_serialize(void *data, size_t size)
     if (initializing)
         return false;
 
-    const char* filename = ConfigGetSharedDataFilepath("savestate.temp");
-    int success = savestates_save_m64p((char*)filename);
-    FILE *read_ptr;
-    read_ptr = fopen(filename, "rb");
-    int read_size = fread(data, size, 1, read_ptr);
-    fclose(read_ptr);
-    remove(filename);
+    int success = savestates_save_m64p(save_filename);
+    rewind(save_ptr);
+    int read_size = fread(data, size, 1, save_ptr);
     if (success)
         return true;
 
@@ -844,13 +851,10 @@ bool retro_unserialize(const void * data, size_t size)
     if (initializing)
         return false;
 
-    FILE *write_ptr;
-    const char* filename = ConfigGetSharedDataFilepath("savestate.temp");
-    write_ptr = fopen(filename,"wb");
-    fwrite(data, size, 1, write_ptr);
-    fclose(write_ptr);
-    int success = savestates_load_m64p((char*)filename);
-    remove(filename);
+    rewind(save_ptr);
+    fwrite(data, size, 1, save_ptr);
+    fflush(save_ptr);
+    int success = savestates_load_m64p(save_filename);
     if (success)
         return true;
 
