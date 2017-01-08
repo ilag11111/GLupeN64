@@ -917,7 +917,7 @@ void retro_cheat_set(unsigned index, bool enabled, const char* codeLine)
                 char codePartS[matchLength];
                 strncpy(codePartS,codeLine+cursor-matchLength,matchLength);
                 codePartS[matchLength]=0;
-                codeParts[partCount++]=strtol(codePartS,NULL,16);
+                codeParts[partCount++]=strtoul(codePartS,NULL,16);
                 matchLength=0;
                 printf("!!! - Cheat part %i found: %s, decoded as %X\n",partCount-1,codePartS,codeParts[partCount-1]);
             }
