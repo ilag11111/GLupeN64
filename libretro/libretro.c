@@ -905,6 +905,7 @@ void retro_cheat_set(unsigned index, bool enabled, const char* codeLine)
 
     //Generate a name
     sprintf(name, "cheat_%u",index);
+    printf("!!! - Cheat %u name: %s\n",index,name);
 
     //Break the code into Parts
     for (cursor=0;;cursor++)
@@ -918,6 +919,7 @@ void retro_cheat_set(unsigned index, bool enabled, const char* codeLine)
                 codePartS[matchLength]=0;
                 codeParts[partCount++]=strtol(codePartS,NULL,16);
                 matchLength=0;
+                printf("!!! - Cheat part %i found: %s, decoded as %X\n",partCount-1,codePartS,codeParts[partCount-1]);
             }
         }
         if (!codeLine[cursor]){
@@ -929,6 +931,7 @@ void retro_cheat_set(unsigned index, bool enabled, const char* codeLine)
     for (cursor=0;2*cursor+1<partCount;cursor++){
         mupenCode[cursor].address=codeParts[2*cursor];
         mupenCode[cursor].value=codeParts[2*cursor+1];
+        printf("!!! - Cheat Line %i: %X %X\n",cursor,mupenCode[cursor].address,mupenCode[cursor].value);
     }
 
     //Assign to mupenCode
